@@ -2,7 +2,7 @@
 <!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
 <platform version="4.1">
   <actor host="Fafard" function="peer">
-    <argument value="10"/>
+    <argument value="15.0"/>
     <argument value="Ginette"/>
   </actor>
   <actor host="Ginette" function="peer">
