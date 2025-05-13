@@ -7,6 +7,6 @@
   </actor>
   <actor host="Ginette" function="peer">
     <argument value="10.0"/>
-    <argument value=""/>
+    <argument value="Fafard"/>
   </actor>
 </platform>

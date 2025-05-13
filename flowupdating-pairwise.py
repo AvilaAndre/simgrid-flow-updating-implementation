@@ -1,6 +1,20 @@
 from simgrid import Engine, Mailbox, this_actor
 from collections import defaultdict
+from dataclasses import dataclass
 import sys
+
+
+@dataclass
+class FlowUpdatingMsg:
+    sender: str
+    flow: float
+    avg: float
+
+    def size(self) -> int:
+        return sys.getsizeof(self) \
+            + sys.getsizeof(self.sender) \
+            + sys.getsizeof(self.flow) \
+            + sys.getsizeof(self.avg)
 
 
 class Peer:
@@ -70,10 +84,8 @@ class Peer:
 
         self.ticks_since_last_avg[neigh] = Engine.clock
 
-        # TODO: Send message with this self.name, self.flows[neigh], avg
-        # self.neighbors[neigh].put()
-
-        this_actor.info(f"{self.name} should send message to {neigh}")
+        payload = FlowUpdatingMsg(self.name, self.flows[neigh], avg)
+        self.neighbors[neigh].put(payload, payload.size())
 
 
 if __name__ == "__main__":
