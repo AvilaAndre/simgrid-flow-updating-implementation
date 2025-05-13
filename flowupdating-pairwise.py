@@ -1,4 +1,5 @@
 from simgrid import Engine, Mailbox, this_actor
+from collections import defaultdict
 import sys
 
 
@@ -14,15 +15,13 @@ class Peer:
             self.neighbors_ids = neighbors_ids.split(',')
 
         self.neighbors = dict()
-        self.flows = dict()
-        self.estimates = dict()
-        self.ticks_since_last_avg = dict()
+        self.flows = defaultdict(float)
+        self.estimates = defaultdict(float)
+        self.ticks_since_last_avg = defaultdict(float)
         self.last_avg = 0.0
 
         # setup mailbox
         self.mailbox = Mailbox.by_name(self.name)
-
-        self.last_tick = 0.0
 
     # this is called right away
     def __call__(self):
@@ -48,8 +47,33 @@ class Peer:
             this_actor.sleep_for(Peer.TICK_INTERVAL)
 
     def tick(self):
-        if self.last_tick < (Engine.clock - Peer.TICK_TIMEOUT):
-            self.last_tick = Engine.clock
+        threshold = Engine.clock - Peer.TICK_TIMEOUT
+
+        for neigh in self.neighbors_ids:
+            if self.ticks_since_last_avg[neigh] < threshold:
+                self.avg_and_send(neigh)
+
+    def avg_and_send(self, neigh: str):
+        self.neighbors_ids
+
+        flows_sum = 0.0
+
+        for flow in map(lambda x: self.flows[x], self.neighbors_ids):
+            flows_sum += flow
+
+        estimate = self.value - flows_sum
+        avg = (self.estimates[neigh] + estimate) / 2.0
+
+        self.last_avg = avg
+        self.flows[neigh] = self.flows[neigh] + avg - self.estimates[neigh]
+        self.estimates[neigh] = avg
+
+        self.ticks_since_last_avg[neigh] = Engine.clock
+
+        # TODO: Send message with this self.name, self.flows[neigh], avg
+        # self.neighbors[neigh].put()
+
+        this_actor.info(f"{self.name} should send message to {neigh}")
 
 
 if __name__ == "__main__":
