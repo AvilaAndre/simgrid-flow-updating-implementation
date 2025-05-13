@@ -8,13 +8,13 @@ import sys
 class FlowUpdatingMsg:
     sender: str
     flow: float
-    avg: float
+    estimate: float
 
     def size(self) -> int:
         return sys.getsizeof(self) \
             + sys.getsizeof(self.sender) \
             + sys.getsizeof(self.flow) \
-            + sys.getsizeof(self.avg)
+            + sys.getsizeof(self.estimate)
 
 
 class Peer:
@@ -39,7 +39,7 @@ class Peer:
 
     # this is called right away
     def __call__(self):
-        this_actor.info(f"Peer {self.name} setup.")
+        this_actor.info(f"Peer {self.name} with value {self.value} setup.")
 
         for name in self.neighbors_ids:
             self.neighbors[name] = Mailbox.by_name(name)
@@ -53,9 +53,11 @@ class Peer:
                 comm = self.mailbox.get_async()
 
             if comm.test():
-                this_actor.info(
-                    f"Received message: {comm.wait().get_payload()}")
+                msg = comm.wait().get_payload()
                 comm = None
+
+                if type(msg) is FlowUpdatingMsg:
+                    self.on_receive(msg)
 
             self.tick()
             this_actor.sleep_for(Peer.TICK_INTERVAL)
@@ -67,14 +69,13 @@ class Peer:
             if self.ticks_since_last_avg[neigh] < threshold:
                 self.avg_and_send(neigh)
 
+    def on_receive(self, msg: FlowUpdatingMsg):
+        self.estimates[msg.sender] = msg.estimate
+        self.flows[msg.sender] = -msg.flow
+        self.avg_and_send(msg.sender)
+
     def avg_and_send(self, neigh: str):
-        self.neighbors_ids
-
-        flows_sum = 0.0
-
-        for flow in map(lambda x: self.flows[x], self.neighbors_ids):
-            flows_sum += flow
-
+        flows_sum = sum(map(lambda x: self.flows[x], self.neighbors_ids))
         estimate = self.value - flows_sum
         avg = (self.estimates[neigh] + estimate) / 2.0
 
@@ -85,7 +86,7 @@ class Peer:
         self.ticks_since_last_avg[neigh] = Engine.clock
 
         payload = FlowUpdatingMsg(self.name, self.flows[neigh], avg)
-        self.neighbors[neigh].put(payload, payload.size())
+        self.neighbors[neigh].put_async(payload, payload.size())
 
 
 if __name__ == "__main__":
