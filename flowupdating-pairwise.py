@@ -122,7 +122,11 @@ def watcher(run_until: float, time_interval: float = 10.0):
         this_actor.sleep_for(min(time_interval, run_until - Engine.clock))
         print_global_values()
 
-    # TODO: Kill all actors
+    this_actor.info("Killing every actor but myself.")
+    Actor.kill_all()
+
+    # this line is not really necessary
+    this_actor.exit()
 
 
 if __name__ == "__main__":
