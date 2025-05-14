@@ -1,6 +1,7 @@
-from simgrid import Engine, Mailbox, this_actor
+from simgrid import Actor, Engine, Mailbox, this_actor
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import Enum
 import sys
 
 
@@ -56,10 +57,15 @@ class Peer:
 
             if comm.test():
                 msg = comm.wait().get_payload()
+                comm.cancel()
                 comm = None
 
                 if type(msg) is FlowUpdatingMsg:
                     self.on_receive(msg)
+                elif type(msg) is WatcherQuery:
+                    match msg:
+                        case WatcherQuery.LAST_AVG:
+                            this_actor.info(f"last_avg {self.last_avg}")
 
             self.tick()
             this_actor.sleep_for(Peer.TICK_INTERVAL)
@@ -91,7 +97,17 @@ class Peer:
         self.neighbors[neigh].put_async(payload, payload.size())
 
 
-# TODO: Implement an observer to log results
+class WatcherQuery(Enum):
+    LAST_AVG = 0
+
+
+def watcher():
+    hostname = this_actor.get_host().name
+    mailbox = Mailbox.by_name(hostname)
+
+    while True:
+        this_actor.sleep_for(10.0)
+        mailbox.put(WatcherQuery.LAST_AVG, 0)
 
 
 if __name__ == "__main__":
@@ -102,6 +118,9 @@ if __name__ == "__main__":
     e.register_actor("peer", Peer)
     e.load_deployment("./actors.xml")
 
-    e.run_until(10_000)
+    for hostname in list(map(lambda x: x.name, e.all_hosts)):
+        Actor.create("watcher", e.host_by_name(hostname), watcher)
+
+    e.run_until(1_000)
 
     this_actor.info("Simulation finished")
