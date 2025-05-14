@@ -42,6 +42,15 @@ class Peer:
         self.pending_comms = ActivitySet()
 
     @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, val):
+        global_values["value"][self.name] = val
+        self._value = val
+
+    @property
     def last_avg(self):
         return self._last_avg
 
