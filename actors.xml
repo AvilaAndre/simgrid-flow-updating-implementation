@@ -23,6 +23,6 @@
   </actor>
   <actor host="Bourassa" function="peer">
     <argument value="5.0"/>
-    <argument value="Fafard,Ginette"/>
+    <argument value="Fafard,Ginette,Jacquelin"/>
   </actor>
 </platform>
