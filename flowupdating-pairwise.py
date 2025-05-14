@@ -151,12 +151,6 @@ if __name__ == "__main__":
     # Add a watcher of the changes
     Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0, 15.0)
 
-    """
-    # WARNING: Every host should have a Peer actor
-    for hostname in list(map(lambda x: x.name, e.all_hosts)):
-        Actor.create("watcher", e.host_by_name(hostname), watcher, 1000)
-    """
-
     e.run_until(10000)
 
     this_actor.info("Simulation finished")
