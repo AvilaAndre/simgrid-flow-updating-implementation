@@ -158,7 +158,7 @@ if __name__ == "__main__":
     e.netzone_root.add_host("observer", 25e6)
 
     # Add a watcher of the changes
-    Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0, 15.0)
+    Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0, 10.0)
 
     e.run_until(10000)
 
