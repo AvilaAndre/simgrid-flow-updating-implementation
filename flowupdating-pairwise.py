@@ -117,9 +117,9 @@ def print_global_values():
         this_actor.info(f"{key}{global_values[key]}")
 
 
-def watcher(run_until: float):
+def watcher(run_until: float, time_interval: float = 10.0):
     while Engine.clock < run_until:
-        this_actor.sleep_for(min(10.0, run_until - Engine.clock))
+        this_actor.sleep_for(min(time_interval, run_until - Engine.clock))
         print_global_values()
 
     # TODO: Kill all actors
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     e.netzone_root.add_host("observer", 25e6)
 
     # Add a watcher of the changes
-    Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0)
+    Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0, 15.0)
 
     """
     # WARNING: Every host should have a Peer actor
