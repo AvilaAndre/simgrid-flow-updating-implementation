@@ -11,10 +11,12 @@ class FlowUpdatingMsg:
     estimate: float
 
     def size(self) -> int:
-        return sys.getsizeof(self) \
-            + sys.getsizeof(self.sender) \
-            + sys.getsizeof(self.flow) \
+        return (
+            sys.getsizeof(self)
+            + sys.getsizeof(self.sender)
+            + sys.getsizeof(self.flow)
             + sys.getsizeof(self.estimate)
+        )
 
 
 class Peer:
@@ -26,7 +28,7 @@ class Peer:
         self.value = float(value)
         self.neighbors_ids = []
         if len(neighbors_ids):
-            self.neighbors_ids = neighbors_ids.split(',')
+            self.neighbors_ids = neighbors_ids.split(",")
 
         self.neighbors = dict()
         self.flows = defaultdict(float)
@@ -87,6 +89,9 @@ class Peer:
 
         payload = FlowUpdatingMsg(self.name, self.flows[neigh], avg)
         self.neighbors[neigh].put_async(payload, payload.size())
+
+
+# TODO: Implement an observer to log results
 
 
 if __name__ == "__main__":
