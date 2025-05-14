@@ -13,4 +13,16 @@
     <argument value="20.0"/>
     <argument value="Fafard,Ginette"/>
   </actor>
+  <actor host="Jupiter" function="peer">
+    <argument value="60.0"/>
+    <argument value="Fafard,Ginette"/>
+  </actor>
+  <actor host="Jacquelin" function="peer">
+    <argument value="80.0"/>
+    <argument value="Fafard,Ginette"/>
+  </actor>
+  <actor host="Bourassa" function="peer">
+    <argument value="5.0"/>
+    <argument value="Fafard,Ginette"/>
+  </actor>
 </platform>
