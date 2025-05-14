@@ -1,7 +1,6 @@
-from simgrid import Actor, Engine, Mailbox, this_actor
+from simgrid import Actor, ActivitySet, Mailbox, Engine, Host, this_actor
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
 import sys
 
 
@@ -35,10 +34,21 @@ class Peer:
         self.flows = defaultdict(float)
         self.estimates = defaultdict(float)
         self.ticks_since_last_avg = defaultdict(float)
-        self.last_avg = 0.0
+        self._last_avg = 0.0
 
         # setup mailbox
         self.mailbox = Mailbox.by_name(self.name)
+
+        self.pending_comms = ActivitySet()
+
+    @property
+    def last_avg(self):
+        return self._last_avg
+
+    @last_avg.setter
+    def last_avg(self, val):
+        global_values["last_avg"][self.name] = val
+        self._last_avg = val
 
     # this is called right away
     def __call__(self):
@@ -62,10 +72,6 @@ class Peer:
 
                 if type(msg) is FlowUpdatingMsg:
                     self.on_receive(msg)
-                elif type(msg) is WatcherQuery:
-                    match msg:
-                        case WatcherQuery.LAST_AVG:
-                            this_actor.info(f"last_avg {self.last_avg}")
 
             self.tick()
             this_actor.sleep_for(Peer.TICK_INTERVAL)
@@ -78,6 +84,10 @@ class Peer:
                 self.avg_and_send(neigh)
 
     def on_receive(self, msg: FlowUpdatingMsg):
+        if msg.sender not in self.neighbors.keys():
+            self.neighbors[msg.sender] = Mailbox.by_name(msg.sender)
+            this_actor.error(f"{msg.sender} is not {self.name}'s neighbor")
+
         self.estimates[msg.sender] = msg.estimate
         self.flows[msg.sender] = -msg.flow
         self.avg_and_send(msg.sender)
@@ -94,20 +104,25 @@ class Peer:
         self.ticks_since_last_avg[neigh] = Engine.clock
 
         payload = FlowUpdatingMsg(self.name, self.flows[neigh], avg)
-        self.neighbors[neigh].put_async(payload, payload.size())
+        self.pending_comms.push(
+            self.neighbors[neigh].put_async(payload, payload.size())
+        )
 
 
-class WatcherQuery(Enum):
-    LAST_AVG = 0
+global_values = defaultdict(dict)
 
 
-def watcher():
-    hostname = this_actor.get_host().name
-    mailbox = Mailbox.by_name(hostname)
+def print_global_values():
+    for key in global_values.keys():
+        this_actor.info(f"{key}{global_values[key]}")
 
-    while True:
-        this_actor.sleep_for(10.0)
-        mailbox.put(WatcherQuery.LAST_AVG, 0)
+
+def watcher(run_until: float):
+    while Engine.clock < run_until:
+        this_actor.sleep_for(min(10.0, run_until - Engine.clock))
+        print_global_values()
+
+    # TODO: Kill all actors
 
 
 if __name__ == "__main__":
@@ -118,9 +133,17 @@ if __name__ == "__main__":
     e.register_actor("peer", Peer)
     e.load_deployment("./actors.xml")
 
-    for hostname in list(map(lambda x: x.name, e.all_hosts)):
-        Actor.create("watcher", e.host_by_name(hostname), watcher)
+    e.netzone_root.add_host("observer", 25e6)
 
-    e.run_until(1_000)
+    # Add a watcher of the changes
+    Actor.create("watcher", Host.by_name("observer"), watcher, 1000.0)
+
+    """
+    # WARNING: Every host should have a Peer actor
+    for hostname in list(map(lambda x: x.name, e.all_hosts)):
+        Actor.create("watcher", e.host_by_name(hostname), watcher, 1000)
+    """
+
+    e.run_until(10000)
 
     this_actor.info("Simulation finished")

@@ -3,14 +3,14 @@
 <platform version="4.1">
   <actor host="Fafard" function="peer">
     <argument value="15.0"/>
-    <argument value="Ginette,Jupiter"/>
+    <argument value="Ginette,Jupiter,Boivin"/>
   </actor>
   <actor host="Ginette" function="peer">
     <argument value="10.0"/>
     <argument value="Fafard,Jupiter"/>
   </actor>
-  <actor host="Jupiter" function="peer">
-    <argument value="60.0"/>
+  <actor host="Boivin" function="peer">
+    <argument value="20.0"/>
     <argument value="Fafard,Ginette"/>
   </actor>
 </platform>
