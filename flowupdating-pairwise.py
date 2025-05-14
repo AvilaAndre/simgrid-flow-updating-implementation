@@ -23,18 +23,20 @@ class Peer:
     TICK_INTERVAL = 1.0
     TICK_TIMEOUT = 50.0
 
-    def __init__(self, value: str, neighbors_ids: str = ""):
+    def __init__(self, value: str, neighbors_ids_str: str = ""):
         self.name = this_actor.get_host().name
         self.value = float(value)
-        self.neighbors_ids = []
-        if len(neighbors_ids):
-            self.neighbors_ids = neighbors_ids.split(",")
+        neighbors_ids = []
+        if len(neighbors_ids_str):
+            neighbors_ids = neighbors_ids_str.split(",")
 
-        self.neighbors = dict()
         self.flows = defaultdict(float)
         self.estimates = defaultdict(float)
         self.ticks_since_last_avg = defaultdict(float)
         self._last_avg = 0.0
+        self.neighbors = dict()
+        for name in neighbors_ids:
+            self.neighbors[name] = Mailbox.by_name(name)
 
         # setup mailbox
         self.mailbox = Mailbox.by_name(self.name)
@@ -61,11 +63,7 @@ class Peer:
 
     # this is called right away
     def __call__(self):
-        this_actor.info(f"Peer {self.name} with value {self.value} setup.")
-
-        for name in self.neighbors_ids:
-            self.neighbors[name] = Mailbox.by_name(name)
-
+        this_actor.info(f"Peer {self.name} with value {self.value} started.")
         self.loop()
 
     def loop(self):
@@ -88,7 +86,7 @@ class Peer:
     def tick(self):
         threshold = Engine.clock - Peer.TICK_TIMEOUT
 
-        for neigh in self.neighbors_ids:
+        for neigh in self.neighbors.keys():
             if self.ticks_since_last_avg[neigh] < threshold:
                 self.avg_and_send(neigh)
 
@@ -102,7 +100,7 @@ class Peer:
         self.avg_and_send(msg.sender)
 
     def avg_and_send(self, neigh: str):
-        flows_sum = sum(map(lambda x: self.flows[x], self.neighbors_ids))
+        flows_sum = sum(map(lambda x: self.flows[x], self.neighbors.keys()))
         estimate = self.value - flows_sum
         avg = (self.estimates[neigh] + estimate) / 2.0
 
