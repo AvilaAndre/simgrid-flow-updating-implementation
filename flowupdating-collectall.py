@@ -119,6 +119,7 @@ class Peer:
             self.estimates[name] = avg
 
             payload = FlowUpdatingMsg(self.name, new_flow, avg)
+            # FIXME: pending comms just keeps growing because detaching a comm gives Segmentation Fault
             self.pending_comms.push(
                 self.neighbors[name].put_async(payload, payload.size())
             )

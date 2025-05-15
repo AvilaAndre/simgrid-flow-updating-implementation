@@ -111,6 +111,7 @@ class Peer:
         self.ticks_since_last_avg[neigh] = Engine.clock
 
         payload = FlowUpdatingMsg(self.name, self.flows[neigh], avg)
+        # FIXME: pending comms just keeps growing because detaching a comm gives Segmentation Fault
         self.pending_comms.push(
             self.neighbors[neigh].put_async(payload, payload.size())
         )
